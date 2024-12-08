@@ -105,7 +105,7 @@ class DiffARLearner:
     def restore_from_checkpoint(self, filename='weights'):
         try:
             path = f'{os.getcwd()}/{filename}.pt'
-            checkpoint = torch.load(path, map_location=self.device)
+            checkpoint = torch.load(path, map_location=self.device, weights_only = False)
             self.load_state_dict(checkpoint)
             logger.info(f"loaded checkpoint from: {path} ({checkpoint['step']} steps)")
             return True
