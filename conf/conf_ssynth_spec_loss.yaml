@@ -1,0 +1,78 @@
+defaults:
+  - override hydra/job_logging: colorlog
+  - override hydra/hydra_logging: colorlog
+
+#--- This param seems to not be used (itamark)
+#n_samples: 8000
+
+sample_rate: 16000
+#max_steps: 4
+max_steps: null
+batch_size_validation: 16
+batch_size_train: 32
+learning_rate: 2e-4
+max_grad_norm: null
+model_dir: "runs_ssynth/DiffAR_200/outputs"
+val_every_n_epochs: 5
+summery_every_n_epochs: 5
+num_workers: 4
+test: false
+seed: 1234
+mask_loss_using_overlap: -1
+phoneme_context_dim: 2
+spec_loss_coeff: 0
+
+residual_layers: 32 #36
+residual_channels: 256
+dilation_cycle_length: 11
+noise_schedule:
+  start: 1e-4
+  stop: 0.02
+  num: 200
+
+n_mels: 80 # TODO
+fp16: false
+
+augment: []
+
+features:
+
+
+train_ds:
+  _target_: ssynth.dataset.PairedAudioDataset
+  data_dir: "/home/itamark/ssynth/git_repos/DeepLearningExamples/PyTorch/SpeechSynthesis/HiFiGAN/data_ssynth" 
+  filelist: "/home/itamark/ssynth/git_repos/DeepLearningExamples/PyTorch/SpeechSynthesis/HiFiGAN/data_ssynth/filelists/ssynth_audio_train.txt"
+  env_params: {"frame_len_samples": 512, "hop_len_samples": 256}
+  sample_len_sec: 0.5
+  cache_dir: "/home/itamark/ssynth/git_repos/DeepLearningExamples/PyTorch/SpeechSynthesis/HiFiGAN/sax_synth_code/feature_cache_histlen1"
+  fs: ${sample_rate}
+
+valid_ds:
+  _target_: ssynth.dataset.PairedAudioDataset
+  data_dir: "/home/itamark/ssynth/git_repos/DeepLearningExamples/PyTorch/SpeechSynthesis/HiFiGAN/data_ssynth" 
+  filelist: "/home/itamark/ssynth/git_repos/DeepLearningExamples/PyTorch/SpeechSynthesis/HiFiGAN/data_ssynth/filelists/ssynth_audio_val.txt"
+  env_params: {"frame_len_samples": 512, "hop_len_samples": 256}
+  sample_len_sec: 0.5
+  cache_dir: "/home/itamark/ssynth/git_repos/DeepLearningExamples/PyTorch/SpeechSynthesis/HiFiGAN/sax_synth_code/feature_cache_histlen1"
+  fs: ${sample_rate}
+
+#--- These params are seem to not be used (itamark)
+#Windows_length: 8000
+#Frame_length: 4000
+
+ # text params
+total_phonemes: 73
+max_duration_phoneme: 101 # In case a frame is consist of single phoneme.
+
+replica_id_attempt: 10
+
+hydra:
+  run:
+    dir: ${model_dir}/exp_${hydra.job.override_dirname}
+  job:
+    chdir: true
+    config:
+      override_dirname:
+        kv_sep: '='
+        item_sep: ','
+        exclude_keys: ['model_dir', 'train_ds.json_wav', 'train_ds.json_manifest_b', 'valid_ds.json_wav', 'valid_ds.json_manifest_b', 'test']

@@ -329,7 +329,7 @@ def valid_epoch(model, loader, criterion, device):
     logger.info(f"accs: {acc0,acc1,acc2,acc3}")
     return epoch_loss / len(loader), epoch_loss_scaled / len(loader), acc0, acc1, acc2, acc3
 
-@hydra.main(config_path=".", config_name="duration_predictor.yaml")
+@hydra.main(config_path=".", config_name="duration_predictor.yaml", version_base=None)
 def main(cfg):
 
     ### for train procedure: ###

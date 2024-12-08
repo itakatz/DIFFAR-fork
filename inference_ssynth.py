@@ -49,14 +49,18 @@ def load_model(model_dir=None, params=None, device=torch.device('cuda',6)):
             checkpoint = torch.load(f'{model_dir}/weights.pt')
         else:
             checkpoint = torch.load(model_dir)
-        model = DiffAR(AttrDict(base_params)).to(device)
+        if params is not None:
+            model = DiffAR(params).to(device)
+        else:
+            model = DiffAR(AttrDict(base_params)).to(device)
+
         model.load_state_dict(checkpoint['model'])
         model.eval()
         models[model_dir] = model
         print("DiffAR model loaded")
 
     model = models[model_dir]
-    model.params.override(params)
+    #model.params.override(params)
     return model
 
 def inference_process(conditioned_window, conditioned_phonemes_sig, conditioned_energy_sig, cur_model=None, params=None, device=torch.device('cuda',6)):
@@ -294,39 +298,43 @@ def main(args):
         directory_path = './'
     else:
         directory_path = args.main_directory
-
     
     ### from text files predict textgridfiles ###
     origin_text_path_ = os.path.join(directory_path,"text_files")
 
     ### using G2P MODEL
-    print("Start predicting Textgrids")
-    path_target_predicted_textgrid = open_folder(directory_path, "predicted_TextGrid_files")
+    #print("Start predicting Textgrids")
+    #path_target_predicted_textgrid = open_folder(directory_path, "predicted_TextGrid_files")
     #file_names_and_text_list = producing_filename_text_phoneme_list(origin_text_path_, None)
     #Is_G2P = True
     #duration_model_path = os.path.join(os.getcwd(),"duration_predictors_files/saved_models/predictor_model_sec_dividing_kernel_5.ckpt") 
     #test_on_given_lists(file_names_and_text_list,path_target_predicted_textgrid,duration_model_path,Is_G2P)
-    print("Finish predicting Textgrids")
+    #print("Finish predicting Textgrids")
     
 ### from textgrid files predict energy files ###
-    print("Start predicting Energies")
+    #print("Start predicting Energies")
 
     ### using phonemse from G2P MODEL
-    path_target_predicted_energy = open_folder(directory_path, "predicted_energy_files")
+    #path_target_predicted_energy = open_folder(directory_path, "predicted_energy_files")
     #file_names_and_phoneme_list = producing_phoneme_list(path_target_predicted_textgrid)
     #energy_model_path = os.path.join(os.getcwd(),"energy_predictor_files/saved_models/energy_predictor_model_2_layers_7_5_k.ckpt") 
     #test_on_given_lists_energy(file_names_and_phoneme_list,path_target_predicted_energy, energy_model_path)
-    print("Finish predicting Energies")
+    #print("Finish predicting Energies")
 
 ### predict several wavs from a folder: 
     current_model =  os.path.join(os.getcwd(),"models/DiffAR_200.pt")
     target_path = open_folder(directory_path, "generated_wavs")
-    Textgrid_path = path_target_predicted_textgrid
-    Npy_path = path_target_predicted_energy
+    #Textgrid_path = path_target_predicted_textgrid
+    #Npy_path = path_target_predicted_energy
 
     # DEBUG itamark: this is a fix for loading the model with non-defualt params
-    if False:
-        cur_model_ = load_model(current_model)
+    if True:
+        from hydra import compose, initialize
+        dev = torch.device('cuda', 6)
+        with initialize(version_base=None, config_path=f'{directory_path}/.hydra', job_name = 'inference_ssynth'):
+            params = compose(config_name = "config", overrides = [])
+        current_model = f'{directory_path}/min/weights.pt'
+        cur_model_ = load_model(current_model, params, dev)
     else:
         import pickle
         params = pickle.load(open('/home/mlspeech/itamark/git_repos/DIFFAR/runs/DiffAR_200/outputs/exp_/params_for_mytrain.pickle','rb'))

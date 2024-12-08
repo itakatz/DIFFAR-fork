@@ -286,7 +286,7 @@ class PairedAudioDataset(torch.utils.data.Dataset):
             audio_b = audio_b[:, start:end]
             audio_b[:,overlap_zone:]=0
 
-        return audio_a, audio_b, conditioned_phonemes_signal_a, conditioned_energy_signal_a
+        return audio_a, audio_b, conditioned_phonemes_signal_a, conditioned_energy_signal_a, overlap_zone
     
 if __name__ == "__main__":
     print("audio.py")

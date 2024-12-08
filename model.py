@@ -59,12 +59,12 @@ class MRB(nn.Module):
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, residual_channels, dilation):
+    def __init__(self, residual_channels, dilation, phoneme_context_sz = 1):
         super().__init__()
         self.dilated_conv = MRB(residual_channels, 2 * residual_channels, [3,5,7], dilation=dilation)
         self.diffusion_projection = Linear(512, residual_channels)
         self.conditioner_projection = MRB(1, 2 * residual_channels, [3,5,7], dilation=dilation)  
-        self.conditioner_phoneme = MRB(1, 1, [3,5,7], dilation=dilation)
+        self.conditioner_phoneme = MRB(phoneme_context_sz, 1, [3,5,7], dilation=dilation)
         self.conditioner_energy = MRB(1, 1, [3,5,7], dilation=dilation)
         self.output_projection = Conv1d(residual_channels, 2 * residual_channels, 1)
 
@@ -90,7 +90,7 @@ class DiffAR(nn.Module):
         self.input_projection = Conv1d(1, params.residual_channels, 1)
         self.diffusion_embedding = DiffusionEmbedding(len(params.noise_schedule))
         self.residual_layers = nn.ModuleList([
-                ResidualBlock(params.residual_channels, 2**(i % params.dilation_cycle_length))
+                ResidualBlock(params.residual_channels, 2**(i % params.dilation_cycle_length), params.phoneme_context_dim)
                 for i in range(params.residual_layers)
         ])
         self.skip_projection = Conv1d(params.residual_channels, params.residual_channels, 1)
@@ -102,11 +102,16 @@ class DiffAR(nn.Module):
         x = self.input_projection(x)
         x = F.relu(x)
         diffusion_step = self.diffusion_embedding(diffusion_step)
-        skip = []
+        #skip = []
+        #--- itamark: do more mem-efficient summation
+        skip_sum = torch.zeros_like(x)
         for layer in self.residual_layers:
             x, skip_connection = layer(x, conditioner, diffusion_step, phoneme_conditioner, energy_conditioner)
-            skip.append(skip_connection)
-        x = torch.sum(torch.stack(skip), dim=0) / sqrt(len(self.residual_layers))
+            #skip.append(skip_connection)
+            skip_sum = skip_sum + skip_connection
+        x = skip_sum / sqrt(len(self.residual_layers))
+        #x = torch.sum(torch.stack(skip), dim=0) / sqrt(len(self.residual_layers))
+        #assert (x == skip_sum).all(), 'sum not equal'
         x = self.skip_projection(x)
         x = F.relu(x)
         x = self.output_projection(x)

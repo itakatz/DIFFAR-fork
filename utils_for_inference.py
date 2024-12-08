@@ -9,8 +9,7 @@ import torch
 import torchaudio
 import math
 import numpy as np
-torchaudio.set_audio_backend("sox_io")
-from learner import logger
+#torchaudio.set_audio_backend("sox_io")
 import csv
 
 REPRESENT_LENGTH = 128
@@ -206,6 +205,7 @@ class TextGridDataset(torch.utils.data.Dataset):
 
 class AudioDataset(torch.utils.data.Dataset):
     def __init__(self, json_manifest, n_samples=None, min_duration=0, max_duration=float("inf")):
+        from learner import logger
         if n_samples:
             assert n_samples <= min_duration, "`min_duration` must be greater than `n_samples`"
         self.n_samples = n_samples

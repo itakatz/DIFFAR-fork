@@ -12,11 +12,11 @@ def _get_free_port():
         return s.server_address[1]
 
 
-@hydra.main(config_path="conf", config_name="conf")
+@hydra.main(config_path="conf", config_name="conf_ssynth_spec_loss", version_base = None)
 def main(args):
     torch.manual_seed(args.seed)
     replica_count = device_count()
-    # replica_count=1
+    #replica_count = 1
     if replica_count > 1:
         if params.batch_size % replica_count != 0:
             raise ValueError(f'Batch size {params.batch_size} is not evenly divisble by # GPUs {replica_count}.')
